@@ -154,9 +154,6 @@ shadeSortColumn=true
 [KDE]
 contrast=4
 
-[KDE]
-contrast=4
-
 [WM]
 activeBackground=47,52,63
 activeBlend=47,52,63
