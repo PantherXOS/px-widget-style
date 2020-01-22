@@ -6,7 +6,3 @@ install(FILES BreezeHighContrast.colors
         DESTINATION ${DATA_INSTALL_DIR}/color-schemes/)
 install(FILES BreezeLight.colors
         DESTINATION ${DATA_INSTALL_DIR}/color-schemes/)
-install(FILES PantherXBright.colors
-        DESTINATION ${DATA_INSTALL_DIR}/color-schemes/)
-install(FILES PantherXDark.colors
-        DESTINATION ${DATA_INSTALL_DIR}/color-schemes/)

@@ -38,6 +38,7 @@ else()
     add_subdirectory(kdecoration)
   endif()
 
+  add_subdirectory(colors-px)
   add_subdirectory(colors)
   add_subdirectory(cursors)
   add_subdirectory(libbreezecommon)
