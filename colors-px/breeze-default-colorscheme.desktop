@@ -1,0 +1,6 @@
+[Desktop Entry]
+Exec=kde4breeze
+Name=set_pxdark_colorscheme
+OnlyShowIn=LXQt;
+Type=Application
+Version=1.0
