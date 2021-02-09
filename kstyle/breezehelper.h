@@ -28,17 +28,9 @@
 #include <KColorScheme>
 #include <KSharedConfig>
 
-#if BREEZE_USE_KDE4
-#include <KComponentData>
-#endif
-
 #include <QPainterPath>
+#include <QIcon>
 #include <QWidget>
-
-#if BREEZE_HAVE_X11
-#include <QX11Info>
-#include <xcb/xcb.h>
-#endif
 
 namespace Breeze
 {
@@ -51,11 +43,6 @@ namespace Breeze
 
         //* constructor
         explicit Helper( KSharedConfig::Ptr );
-
-        #if BREEZE_USE_KDE4
-        //* constructor
-        explicit Helper( const QByteArray& );
-        #endif
 
         //* destructor
         virtual ~Helper()
@@ -279,39 +266,8 @@ namespace Breeze
 
         //@}
 
-        //@name high dpi utility functions
-        //@{
-
-        //* return dpi-aware pixmap of given size
-        virtual QPixmap highDpiPixmap( const QSize& size ) const
-        { return highDpiPixmap( size.width(), size.height() ); }
-
-        //* return dpi-aware pixmap of given size
-        virtual QPixmap highDpiPixmap( int width ) const
-        { return highDpiPixmap( width, width ); }
-
-        //* return dpi-aware pixmap of given size
-        virtual QPixmap highDpiPixmap( int width, int height ) const;
-
         //* return device pixel ratio for a given pixmap
         virtual qreal devicePixelRatio( const QPixmap& ) const;
-
-        //@}
-
-        //*@name X11 utilities
-        //@{
-
-        #if BREEZE_HAVE_X11
-
-        //* get xcb connection
-        static xcb_connection_t* connection();
-
-        //* create xcb atom
-        xcb_atom_t createAtom( const QString& ) const;
-
-        #endif
-
-        //@}
 
         //* frame radius
         constexpr qreal frameRadius( const int penWidth = PenWidth::NoPen, const qreal bias = 0 ) const
@@ -326,21 +282,16 @@ namespace Breeze
         
         //* return a QRectF with the appropriate size for a rectangle with a pen stroke
         QRectF strokedRect( const QRect &rect, const int penWidth = PenWidth::Frame ) const;
+        
+        QPixmap coloredIcon(const QIcon &icon, const QPalette& palette, const QSize &size,
+                            QIcon::Mode mode = QIcon::Normal, QIcon::State state = QIcon::Off);
 
         protected:
-
-        //* initialize
-        void init();
 
         //* return rounded path in a given rect, with only selected corners rounded, and for a given radius
         QPainterPath roundedPath( const QRectF&, Corners, qreal ) const;
 
         private:
-
-        #if BREEZE_USE_KDE4
-        //* component data
-        KComponentData _componentData;
-        #endif
 
         //* configuration
         KSharedConfig::Ptr _config;
@@ -359,13 +310,6 @@ namespace Breeze
         QColor _inactiveTitleBarColor;
         QColor _inactiveTitleBarTextColor;
         //@}
-
-        #if BREEZE_HAVE_X11
-
-        //* atom used for compositing manager
-        xcb_atom_t _compositingManagerAtom;
-
-        #endif
 
     };
 

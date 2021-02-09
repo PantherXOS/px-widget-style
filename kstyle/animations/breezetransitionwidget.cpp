@@ -58,7 +58,7 @@ namespace Breeze
         _animation.data()->setPropertyName( "opacity" );
 
         // hide when animation is finished
-        connect( _animation.data(), SIGNAL(finished()), SLOT(hide()) );
+        connect( _animation.data(), &QAbstractAnimation::finished, this, &QWidget::hide );
 
     }
 
@@ -80,11 +80,7 @@ namespace Breeze
 
             rect = rect.translated( widget->mapTo( widget->window(), widget->rect().topLeft() ) );
             widget = widget->window();
-            #if QT_VERSION < 0x050000
-            out = QPixmap::grabWidget( widget, rect );
-            #else
             out = widget->grab( rect );
-            #endif
 
         } else {
 

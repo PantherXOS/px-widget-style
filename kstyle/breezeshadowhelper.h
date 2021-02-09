@@ -3,6 +3,7 @@
 
 /*************************************************************************
  * Copyright (C) 2014 by Hugo Pereira Da Costa <hugo.pereira@free.fr>    *
+ * Copyright (C) 2020 by Vlad Zahorodnii <vlad.zahorodnii@kde.org>       *
  *                                                                       *
  * This program is free software; you can redistribute it and/or modify  *
  * it under the terms of the GNU General Public License as published by  *
@@ -21,28 +22,14 @@
  *************************************************************************/
 
 #include "breezetileset.h"
-#include "config-breeze.h"
+
+#include <KWindowShadow>
 
 #include <QObject>
 #include <QPointer>
 #include <QMap>
 #include <QMargins>
-
-#if BREEZE_HAVE_X11
-#include <xcb/xcb.h>
-#endif
-
-#if BREEZE_HAVE_KWAYLAND
-namespace KWayland
-{
-    namespace Client
-    {
-        class ShadowManager;
-        class ShmPool;
-        class Surface;
-    }
-}
-#endif
+#include <QSet>
 
 namespace Breeze
 {
@@ -93,11 +80,6 @@ namespace Breeze
 
         public:
 
-        //*@name property names
-        //@{
-        static const char netWMShadowAtomName[];
-        //@}
-
         //* constructor
         ShadowHelper( QObject*, Helper& );
 
@@ -129,10 +111,10 @@ namespace Breeze
         protected Q_SLOTS:
 
         //* unregister widget
-        void objectDeleted( QObject* );
+        void widgetDeleted( QObject* );
 
-        //* initializes the Wayland specific parts
-        void initializeWayland();
+        //* unregister window
+        void windowDeleted( QObject* );
 
         protected:
 
@@ -151,33 +133,17 @@ namespace Breeze
         //* accept widget
         bool acceptWidget( QWidget* ) const;
 
-        // create pixmap handles from tileset
-        const QVector<quint32>& createPixmapHandles();
+        // create shared shadow tiles from tileset
+        const QVector<KWindowShadowTile::Ptr>& createShadowTiles();
 
-        // create pixmap handle from pixmap
-        quint32 createPixmap( const QPixmap& );
+        // create shadow tile from pixmap
+        KWindowShadowTile::Ptr createTile( const QPixmap& );
 
         //* installs shadow on given widget in a platform independent way
-        bool installShadows( QWidget * );
+        void installShadows( QWidget * );
 
         //* uninstalls shadow on given widget in a platform independent way
-        void uninstallShadows( QWidget * ) const;
-
-        //* install shadow X11 property on given widget
-        /**
-        shadow atom and property specification available at
-        https://community.kde.org/KWin/Shadow
-        */
-        bool installX11Shadows( QWidget* );
-
-        //* uninstall shadow X11 property on given widget
-        void uninstallX11Shadows( QWidget* ) const;
-
-        //* install shadow on given widget for Wayland
-        bool installWaylandShadows( QWidget * );
-
-        //* uninstall shadow on given widget for Wayland
-        void uninstallWaylandShadows( QWidget* ) const;
+        void uninstallShadows( QWidget * );
 
         //* gets the shadow margins for the given widget
         QMargins shadowMargins( QWidget* ) const;
@@ -188,38 +154,19 @@ namespace Breeze
         Helper& _helper;
 
         //* registered widgets
-        QMap<QWidget*, WId> _widgets;
+        QSet<QWidget*> _widgets;
+
+        //* managed shadows
+        QMap<QWindow*, KWindowShadow*> _shadows;
 
         //* tileset
         TileSet _shadowTiles;
 
-        //* number of pixmaps
-        enum { numPixmaps = 8 };
+        //* number of tiles
+        enum { numTiles = 8 };
 
-        //* pixmaps
-        QVector<quint32> _pixmaps;
-
-        #if BREEZE_HAVE_X11
-
-        //* graphical context
-        xcb_gcontext_t _gc = 0;
-
-        //* shadow atom
-        xcb_atom_t _atom = 0;
-
-        #endif
-
-        #if BREEZE_HAVE_KWAYLAND
-
-        //* registered widgets to wayland surface mappings
-        QMap<QWidget*, KWayland::Client::Surface *> _widgetSurfaces;
-
-        //* The Wayland shadow manager to create Shadows for Surfaces (QWindow)
-        QPointer<KWayland::Client::ShadowManager> _shadowManager;
-
-        //* The Wayland Shared memory pool to share the shadow pixmaps with compositor
-        QPointer<KWayland::Client::ShmPool> _shmPool;
-        #endif
+        //* shared shadow tiles
+        QVector<KWindowShadowTile::Ptr> _tiles;
 
     };
 

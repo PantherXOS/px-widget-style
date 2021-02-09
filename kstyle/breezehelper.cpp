@@ -23,13 +23,14 @@
 #include "breezestyleconfigdata.h"
 
 #include <KColorUtils>
+#include <KIconLoader>
 #include <KWindowSystem>
 
 #include <QApplication>
 #include <QPainter>
 
-#if BREEZE_HAVE_X11 && QT_VERSION < 0x050000
-#include <X11/Xlib-xcb.h>
+#if BREEZE_HAVE_X11
+#include <QX11Info>
 #endif
 
 #include <algorithm>
@@ -43,15 +44,7 @@ namespace Breeze
     //____________________________________________________________________
     Helper::Helper( KSharedConfig::Ptr config ):
         _config( std::move( config ) )
-    { init(); }
-
-    //____________________________________________________________________
-    #if BREEZE_USE_KDE4
-    Helper::Helper( const QByteArray& name ):
-        _componentData( name, nullptr, KComponentData::SkipMainComponentRegistration ),
-        _config( _componentData.config() )
-    { init(); }
-    #endif
+    {}
 
     //____________________________________________________________________
     KSharedConfig::Ptr Helper::config() const
@@ -1480,12 +1473,8 @@ namespace Breeze
     bool Helper::isX11()
     {
         #if BREEZE_HAVE_X11
-        #if QT_VERSION >= 0x050000
         static const bool s_isX11 = KWindowSystem::isPlatformX11();
         return s_isX11;
-        #else
-        return true;
-        #endif
         #endif
 
         return false;
@@ -1495,12 +1484,8 @@ namespace Breeze
     //______________________________________________________________________________
     bool Helper::isWayland()
     {
-        #if QT_VERSION >= 0x050000
         static const bool s_isWayland = KWindowSystem::isPlatformWayland();
         return s_isWayland;
-        #else
-        return false;
-        #endif
     }
 
     //______________________________________________________________________________
@@ -1593,13 +1578,7 @@ namespace Breeze
 
         #if BREEZE_HAVE_X11
         if( isX11() )
-        {
-            // direct call to X
-            xcb_get_selection_owner_cookie_t cookie( xcb_get_selection_owner( connection(), _compositingManagerAtom ) );
-            ScopedPointer<xcb_get_selection_owner_reply_t> reply( xcb_get_selection_owner_reply( connection(), cookie, nullptr ) );
-            return reply && reply->owner;
-
-        }
+        { return QX11Info::isCompositingManagerRunning( QX11Info::appScreen() ); }
         #endif
 
         // use KWindowSystem
@@ -1612,79 +1591,26 @@ namespace Breeze
     { return compositingActive() && widget && widget->testAttribute( Qt::WA_TranslucentBackground ); }
 
     //______________________________________________________________________________________
-    QPixmap Helper::highDpiPixmap( int width, int height ) const
-    {
-        #if QT_VERSION >= 0x050300
-        const qreal dpiRatio( qApp->devicePixelRatio() );
-        QPixmap pixmap( width*dpiRatio, height*dpiRatio );
-        pixmap.setDevicePixelRatio( dpiRatio );
-        return pixmap;
-        #else
-        return QPixmap( width, height );
-        #endif
-    }
-
-    //______________________________________________________________________________________
     qreal Helper::devicePixelRatio( const QPixmap& pixmap ) const
     {
-        #if QT_VERSION >= 0x050300
         return pixmap.devicePixelRatio();
-        #else
-        Q_UNUSED(pixmap);
-        return 1;
-        #endif
     }
 
-    #if BREEZE_HAVE_X11
-
-    //____________________________________________________________________
-    xcb_connection_t* Helper::connection()
+    QPixmap Helper::coloredIcon(const QIcon& icon,  const QPalette& palette, const QSize &size, QIcon::Mode mode, QIcon::State state)
     {
-
-        #if QT_VERSION >= 0x050000
-        return QX11Info::connection();
-        #else
-        static xcb_connection_t* connection = nullptr;
-        if( !connection )
-        {
-            Display* display = QX11Info::display();
-            if( display ) connection = XGetXCBConnection( display );
+        const QPalette activePalette = KIconLoader::global()->customPalette();
+        const bool changePalette = activePalette != palette;
+        if (changePalette) {
+            KIconLoader::global()->setCustomPalette(palette);
         }
-        return connection;
-        #endif
-    }
-
-    //____________________________________________________________________
-    xcb_atom_t Helper::createAtom( const QString& name ) const
-    {
-        if( isX11() )
-        {
-
-            xcb_connection_t* connection( Helper::connection() );
-            xcb_intern_atom_cookie_t cookie( xcb_intern_atom( connection, false, name.size(), qPrintable( name ) ) );
-            ScopedPointer<xcb_intern_atom_reply_t> reply( xcb_intern_atom_reply( connection, cookie, nullptr) );
-            return reply ? reply->atom:0;
-
-        } else return 0;
-
-    }
-
-    #endif
-
-    //____________________________________________________________________
-    void Helper::init()
-    {
-        #if BREEZE_HAVE_X11
-
-        if( isX11() )
-        {
-            // create compositing screen
-            const QString atomName( QStringLiteral( "_NET_WM_CM_S%1" ).arg( QX11Info::appScreen() ) );
-            _compositingManagerAtom = createAtom( atomName );
+        const QPixmap pixmap = icon.pixmap(size, mode, state);
+        if (changePalette) {
+            if (activePalette == QPalette()) {
+                KIconLoader::global()->resetPalette();
+            } else {
+                KIconLoader::global()->setCustomPalette(activePalette);
+            }
         }
-
-        #endif
-
+        return pixmap;
     }
-
 }
